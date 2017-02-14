@@ -11,6 +11,9 @@ AC_CONFIG_FILES([Makefile
 
 # Checks for programs.
 AC_PROG_CXX
+AC_LANG_PUSH(C++)
+AX_CXX_COMPILE_STDCXX_11()
+AC_LANG_POP()
 
 # Checks for libraries.
 

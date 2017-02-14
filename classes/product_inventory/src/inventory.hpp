@@ -1,7 +1,7 @@
 #ifndef INVENTORY_HPP
 #define INVENTORY_HPP
 
-#include <map>
+#include <unordered_map>
 #include <string>
 #include "product.hpp"
 
@@ -9,10 +9,11 @@ class Inventory {
 public:
    unsigned int size() { return numProducts; }
    double getValue() const;
-   Product const& lookup(unsigned int id);
+   double priceLookup(unsigned int id);
+   bool sell(unsigned int id, unsigned int quantity);
 private:
    unsigned int numProducts;
-   std::map<unsigned int,Product> database;
+   std::unordered_map<unsigned int,Product> database;
 protected:
 };
 

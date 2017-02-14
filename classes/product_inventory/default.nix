@@ -6,7 +6,7 @@ stdenv.mkDerivation rec {
    name = "product_inventory";
    src = ./.;
 
-   buildInputs = [ autoconf automake gcc ];
+   buildInputs = [ autoconf autoconf-archive automake gcc ];
 
    preConfigure = ''
       aclocal
