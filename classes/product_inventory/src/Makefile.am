@@ -1,4 +1,4 @@
-CXXFLAGS = --pedantic -Wall -Werror -O2
+CXXFLAGS = --pedantic -Wall -Werror
 LDFLAGS =
 
 bin_PROGRAMS = inventory
