@@ -1,18 +1,20 @@
-{ system ? builtins.currentSystem }:
+{ system ? builtins.currentSystem, doCheck ? true }:
 
 with import <nixpkgs> { inherit system; };
 
 stdenv.mkDerivation rec {
+   inherit doCheck;
+
    name = "product_inventory";
    src = ./.;
 
-   buildInputs = [ autoconf autoconf-archive automake gcc ];
+   buildInputs = [ libtool autoconf autoconf-archive automake gcc gtest ];
 
    preConfigure = ''
+      libtoolize
       aclocal
       autoheader
       autoconf
       automake --add-missing
    '';
 }
-

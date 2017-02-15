@@ -3,7 +3,7 @@
 
 using namespace std;
 
-double Inventory::getValue() const {
+double Inventory::value() const {
    double sum=0.0;
    for (auto it=database.begin(); it!=database.end(); it++)
    {
@@ -29,9 +29,4 @@ bool Inventory::sell(unsigned int id, unsigned int quantity) {
       return false;
    }
    return database.at(id).reduceQuantity(quantity);
-}
-
-int main()
-{
-   return 0;
 }

@@ -3,11 +3,12 @@
 
 AC_PREREQ([2.69])
 AC_INIT([product_inventory], [0.1], [fake@gmail.com])
-AM_INIT_AUTOMAKE(product_inventory, 0.1)
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/inventory.cpp])
+AC_CONFIG_SRCDIR([test/gtest.cpp])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+
+AC_CONFIG_FILES([Makefile])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -16,6 +17,7 @@ AX_CXX_COMPILE_STDCXX_11()
 AC_LANG_POP()
 
 # Checks for libraries.
+LT_INIT
 
 # Checks for header files.
 
