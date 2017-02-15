@@ -39,6 +39,33 @@ TEST_F(InventoryTest, IsInitiallyEmpty) {
    ASSERT_EQ(0, iut.size());
 }
 
+TEST_F(InventoryTest, StockMethod) {
+   Product p(0, 1.0, 1);
+   iut.stock(p);
+   ASSERT_EQ(1, iut.size());
+}
+
+TEST_F(InventoryTest, PriceLookupMethod) {
+   Product p(0, 1.0, 1);
+   iut.stock(p);
+   ASSERT_EQ(1.0, iut.priceLookup(p.getId()));
+}
+
+TEST_F(InventoryTest, SellMethod) {
+   Product p(0, 1.0, 1);
+   iut.stock(p);
+   iut.sell(p.getId(), 1);
+   ASSERT_EQ(0, iut.checkStock(p.getId()));
+}
+
+TEST_F(InventoryTest, ValueMethod) {
+   Product p(0, 3.0, 3);
+   Product p2(1, 1.0, 3);
+   iut.stock(p);
+   iut.stock(p2);
+   ASSERT_EQ(12.0, iut.value());
+}
+
 } // namespace
 
 int main(int argc, char **argv) {

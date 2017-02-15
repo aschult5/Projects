@@ -1,6 +1,8 @@
 #ifndef PRODUCT_HPP
 #define PRODUCT_HPP
 
+#include <climits>
+
 class Product
 {
 public:
@@ -11,11 +13,20 @@ public:
       quantity(_quantity)
    { }
 
+   unsigned int getId() const {
+      return id;
+   }
    double getPrice() const { return price; }
    unsigned int getQuantity() const { return quantity; }
    bool reduceQuantity(unsigned int _quantity) {
       if (_quantity > quantity) return false;
       quantity -= _quantity;
+      return true;
+   }
+
+   bool increaseQuantity(unsigned int _quantity) {
+      if (UINT_MAX - _quantity > quantity) return false;
+      quantity += _quantity;
       return true;
    }
 

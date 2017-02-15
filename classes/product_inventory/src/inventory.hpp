@@ -7,13 +7,13 @@
 
 class Inventory {
 public:
-   Inventory() : numProducts(0) { }
-   unsigned int size() const { return numProducts; }
+   unsigned int size() const { return database.size(); }
    double value() const;
    double priceLookup(unsigned int id) const;
+   void stock(Product const& p);
+   unsigned int checkStock(unsigned int);
    bool sell(unsigned int id, unsigned int quantity);
 private:
-   unsigned int numProducts;
    std::unordered_map<unsigned int,Product> database;
 protected:
 };
