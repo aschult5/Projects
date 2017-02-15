@@ -13,7 +13,7 @@ double Inventory::value() const {
    return sum;
 }
 
-double Inventory::priceLookup(unsigned int id) {
+double Inventory::priceLookup(unsigned int id) const {
    if (database.count(id) == 0)
    {
       cout << "Product doesn't exist" << endl;

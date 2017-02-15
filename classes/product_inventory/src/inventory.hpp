@@ -8,9 +8,9 @@
 class Inventory {
 public:
    Inventory() : numProducts(0) { }
-   unsigned int size() { return numProducts; }
+   unsigned int size() const { return numProducts; }
    double value() const;
-   double priceLookup(unsigned int id);
+   double priceLookup(unsigned int id) const;
    bool sell(unsigned int id, unsigned int quantity);
 private:
    unsigned int numProducts;
