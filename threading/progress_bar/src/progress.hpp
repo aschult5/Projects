@@ -16,7 +16,7 @@ public:
    }
 
    // Returns whether we finished properly
-   bool displayUntilDone(std::chrono::milliseconds ms) const {
+   bool displayUntilDone(std::chrono::milliseconds ms=static_cast<std::chrono::milliseconds>(200)) const {
       // TODO register for timer
       while (sum.load() < goal)
       {
