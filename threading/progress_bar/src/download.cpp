@@ -28,7 +28,7 @@ int connectSocket(const char* url)
    setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (const char*)&on, sizeof(on));
 
    dest.sin_family = AF_INET;
-   dest.sin_port = htons(443);
+   dest.sin_port = htons(80);
    bcopy(h->h_addr, &dest.sin_addr.s_addr, h->h_length);
 
    sockfd = connect(sockfd, (struct sockaddr *)&dest, sizeof(struct sockaddr));
