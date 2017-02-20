@@ -65,21 +65,31 @@ bool downloadFile(const char* url, const char* destFile)
 
    // Download file
    char req[1024];
-   snprintf(req, sizeof(req), "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: HTMLGET 1.0\r\n", file==nullptr?"":file, host);
+   snprintf(req, sizeof(req), "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: HTMLGET 1.0\r\n\r\n", file==nullptr?"":file, host);
    std::cout << req << std::endl;
 
    char buffer[1024];
    memset(buffer, 0, sizeof(buffer));
 
    unsigned int n=0;
-   do {
-      n += send(sockfd, &req[n], strlen(req) - n, 0);
-   } while(n < strlen(req));
-
-   n=0;
-   while ((n=recv(sockfd, buffer, sizeof(buffer), 0)) > 0)
+   while(n < strlen(req))
    {
-      std::cout << "Received " << n << std::endl;
+      // Send HTTP GET
+      int sent = send(sockfd, &req[n], strlen(req) - n, 0);
+      if (sent < 0)
+      {
+         std::cout << "Failed to send" << std::endl;
+         n=0;
+         break;
+      }
+      n += sent;
+   }
+   int rcvd = n;
+   while (rcvd > 0)
+   {
+      // Receive
+      rcvd = recv(sockfd, buffer, sizeof(buffer), 0);
+      std::cout << "Received " << rcvd << std::endl;
       fprintf(destfp, "%s", buffer);
       memset(buffer, 0, sizeof(buffer));
    }
