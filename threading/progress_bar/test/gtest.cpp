@@ -41,9 +41,9 @@ TEST(ProgressBarTest, NotInfinite) {
 
 #include "download.hpp"
 TEST(DownloadTest, ConnectToGoogle) {
-   int fd = connectSocket("www.google.com");
-   EXPECT_EQ(0, fd);
-   close(fd);
+   std::pair<int, const char*> connection = connectSocket("www.google.com");
+   EXPECT_GE(connection.first, 0);
+   close(connection.first);
 }
 
 
