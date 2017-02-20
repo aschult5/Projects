@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-namespace Uint {
+namespace Bar {
 
 //
 // single-thread testing
@@ -37,7 +37,14 @@ TEST(ProgressBarTest, NotInfinite) {
    ASSERT_EQ(100, bar.displayOnce());
 }
 
-} // Uint namespace
+} // Bar namespace
+
+#include "download.hpp"
+TEST(DownloadTest, ConnectToGoogle) {
+   int fd = connectSocket("www.google.com");
+   EXPECT_EQ(0, fd);
+   close(fd);
+}
 
 
 int main(int argc, char **argv) {
