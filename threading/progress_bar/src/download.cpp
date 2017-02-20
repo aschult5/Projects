@@ -15,7 +15,6 @@ std::pair<int, const char*> connectSocket(const char* host)
    struct hostent *h;
    struct sockaddr_in dest;
    int sockfd;
-   char on=1;
 
    if (host == NULL)
       exit(1);
@@ -25,10 +24,9 @@ std::pair<int, const char*> connectSocket(const char* host)
       exit(2);
 
    // create and open socket connection
-   sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+   sockfd = socket(PF_INET, SOCK_STREAM, 0);
    if (sockfd == -1)
       exit(3);
-   setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on));
 
    dest.sin_family = AF_INET;
    dest.sin_port = htons(80);
@@ -66,22 +64,27 @@ bool downloadFile(const char* url, const char* destFile)
       destfp = fopen(destFile, "w");
 
    // Download file
-   char req[255] = "GET /\r\n";
-   if (file != NULL)
-      strncat(req, file, 255-strlen("GET /\r\n")-1);
+   char req[1024];
+   snprintf(req, sizeof(req), "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: HTMLGET 1.0\r\n", file==nullptr?"":file, host);
+   std::cout << req << std::endl;
+
    char buffer[1024];
    memset(buffer, 0, sizeof(buffer));
 
    unsigned int n=0;
    do {
-      n += write(sockfd, &req[n], strlen(req) - n);
+      n += send(sockfd, &req[n], strlen(req) - n, 0);
    } while(n < strlen(req));
 
-   while (read(sockfd, buffer, sizeof(buffer)-1) > 0)
+   n=0;
+   while ((n=recv(sockfd, buffer, sizeof(buffer), 0)) > 0)
    {
+      std::cout << "Received " << n << std::endl;
       fprintf(destfp, "%s", buffer);
       memset(buffer, 0, sizeof(buffer));
    }
+
+   // Close up shop
    if (destfp != stdout)
    {
       fclose(destfp);
