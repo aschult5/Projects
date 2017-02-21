@@ -95,36 +95,34 @@ bool downloadFile(const char* url, const char* destFile)
       n += sent;
    }
 
-
    // Receive
-   char header[1024];
-   memset(header, 0, sizeof(header));
 
-   // // header
+   // // header (assume < sizeof buf)
    const char* suffix="\r\n\r\n";
+   unsigned int total=0;
    int index=0;
+   memset(buf, 0, sizeof(buf));
    do {
-      memset(buf, 0, sizeof(buf));
-      int rcvd = recv(sockfd, buf, sizeof(buf), 0);
+      int rcvd = recv(sockfd, buf + total, sizeof(buf)-total, 0);
       if (rcvd < 0)
       {
          std::cout << "Failed to receive header" << std::endl;
-         memset(header, 0, sizeof(header));
+         memset(buf, 0, sizeof(buf));
          break;
       }
-      strncat(header, buf, sizeof(header)-strlen(header)-1);
 
-      index = strlen(header)-strlen(suffix);
+      index = strlen(buf)-strlen(suffix);
       if (index < 0)
          index = 0;
-   } while (strncmp(&header[index], "\r\n\r\n", strlen(suffix)) != 0);
+   } while (sizeof(buf) > total &&
+            strncmp(buf + index, "\r\n\r\n", strlen(suffix)) != 0);
 
-   int length = getContentLength(header);
+   int length = getContentLength(buf);
    std::cout << length << std::endl;
    if (length < 0)
    {
       std::cout << "Failed to get Content-Length from header" << std::endl;
-      std::cout << header << std::endl;
+      std::cout << buf << std::endl;
    }
 
    // // file
