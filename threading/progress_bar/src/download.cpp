@@ -78,7 +78,7 @@ bool downloadFile(const char* url, const char* destFile)
 
    // Form request
    char buf[1024];
-   snprintf(buf, sizeof(buf), "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: HTMLGET 1.0\r\n\r\n", file==nullptr?"":file, host);
+   snprintf(buf, sizeof(buf), "GET /%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: HTMLGET 1.1\r\n\r\n", file==nullptr?"":file, host);
    std::cout << buf << std::endl;
 
    // Send request
