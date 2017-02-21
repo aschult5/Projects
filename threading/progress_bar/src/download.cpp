@@ -1,4 +1,5 @@
 #include "progress.hpp"
+#include <thread>
 #include <cstring>
 #include <cmath>
 #include <unistd.h>
@@ -132,16 +133,20 @@ bool downloadFile(const char* url, const char* destFile)
    else
       destfp = fopen(destFile, "w");
 
+   ProgressBar<int> pb(length);
+   std::thread th(&ProgressBar<int>::displayUntilDone, &pb);
    while (length > 0)
    {
       memset(buf, 0, sizeof(buf));
       int rcvd = recv(sockfd, buf, sizeof(buf)-1, 0);
       if (rcvd < 0)
          break;
-      fprintf(destfp, "%s", buf);
+      pb.progress(rcvd);
 
+      fprintf(destfp, "%s", buf);
       length -= rcvd;
    }
+   th.join();
 
    // Close up shop
    if (destfp != stdout)
