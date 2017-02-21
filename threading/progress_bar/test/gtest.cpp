@@ -30,7 +30,7 @@ TEST(ProgressBarTest, WeirdGoal) {
 #include <thread>
 TEST(ProgressBarTest, NotInfinite) {
    ProgressBar<unsigned int> bar (100);
-   std::thread th(&ProgressBar<unsigned int>::displayUntilDone, &bar, std::chrono::milliseconds(200));
+   std::thread th(&ProgressBar<unsigned int>::displayUntilDone, &bar);
    for (auto i=0; i<100; ++i)
       bar.progress(1);
    th.join();

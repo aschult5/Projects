@@ -2,27 +2,36 @@
 #define PROGRESS_HPP
 
 #include <atomic>
-#include <chrono>
 #include <thread>
 #include <iostream>
+#include <mutex>
+#include <condition_variable>
 
 template<typename T>
 class ProgressBar
 {
 public:
-   ProgressBar(T total) : goal(total)
+   ProgressBar(T total)
+   : update(true),
+     goal(total)
    {
       sum.store(static_cast<T>(0));
    }
 
    // Returns whether we finished properly
-   bool displayUntilDone(std::chrono::milliseconds ms=static_cast<std::chrono::milliseconds>(200)) const {
+   bool displayUntilDone() {
       // TODO register for timer
       while (sum.load() < goal)
       {
+         std::unique_lock<std::mutex> lk(m);
+         cv.wait(lk, [this]{ return update; });
+
          displayOnce();
-         std::this_thread::sleep_for(ms);
+         update = false;
+
+         lk.unlock();
       }
+      displayOnce();
       return sum.load() == goal;
    }
 
@@ -35,9 +44,18 @@ public:
 
    void progress(T units) {
       sum += units;
+      {
+         std::lock_guard<std::mutex> lk(m);
+         update = true;
+      }
+      cv.notify_one();
    }
 
 private:
+   std::condition_variable cv;
+   std::mutex m;
+   bool update;
+
    std::atomic<T> sum;
    const T goal;
 protected:
