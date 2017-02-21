@@ -1,6 +1,6 @@
-#include "progress.hpp"
 #include <gtest/gtest.h>
 #include <memory>
+#include "progress.hpp"
 
 namespace Bar {
 

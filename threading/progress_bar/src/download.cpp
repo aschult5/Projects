@@ -103,7 +103,11 @@ bool downloadFile(const char* url, const char* destFile)
    unsigned int total=0;
    int index=0;
    memset(buf, 0, sizeof(buf));
-   do {
+   std::cout << "Reading header" << std::endl;
+
+   while (sizeof(buf) > total &&
+          strncmp(buf + index, suffix, strlen(suffix)) != 0)
+   {
       int rcvd = recv(sockfd, buf + total, sizeof(buf)-total, 0);
       if (rcvd < 0)
       {
@@ -115,9 +119,8 @@ bool downloadFile(const char* url, const char* destFile)
       index = strlen(buf)-strlen(suffix);
       if (index < 0)
          index = 0;
-   } while (sizeof(buf) > total &&
-            strncmp(buf + index, "\r\n\r\n", strlen(suffix)) != 0);
-
+   }
+   std::cout << "Getting length" << std::endl;
    int length = getContentLength(buf);
    std::cout << length << std::endl;
    if (length < 0)

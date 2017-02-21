@@ -1,9 +1,10 @@
 #ifndef PROGRESS_HPP
 #define PROGRESS_HPP
 
-#include <atomic>
-#include <thread>
+#include <string>
 #include <iostream>
+
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 
@@ -20,7 +21,6 @@ public:
 
    // Returns whether we finished properly
    bool displayUntilDone() {
-      // TODO register for timer
       while (sum.load() < goal)
       {
          std::unique_lock<std::mutex> lk(m);
@@ -32,13 +32,21 @@ public:
          lk.unlock();
       }
       displayOnce();
+      std::cout << std::endl;
       return sum.load() == goal;
    }
 
    // Returns % done as type T
    T displayOnce() const {
+      static T last = 0;
       T ret = (sum.load() * static_cast<T>(100)) / goal;
-      std::cout << ret << std::endl;
+
+      std::cout.seekp(-10, std::ios_base::end);
+      T prog = (ret - last)/10;
+      while (prog-- > 0)
+         std::cout << "=";
+      last = ret - (ret%10);
+
       return ret;
    }
 
