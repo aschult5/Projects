@@ -17,4 +17,6 @@ stdenv.mkDerivation rec {
       autoconf
       automake --add-missing
    '';
+
+   hardeningDisable = [ "all" ];
 }

@@ -3,7 +3,6 @@
 
 #include <string>
 #include <iostream>
-
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -12,49 +11,52 @@ template<typename T>
 class ProgressBar
 {
 public:
-   ProgressBar(T total)
-   : update(true),
-     goal(total)
-   {
-      sum.store(static_cast<T>(0));
+   ProgressBar(T total) : goal(total) {
+      progress.store(0);
+      sum.store(0);
    }
 
    // Returns whether we finished properly
-   bool displayUntilDone() {
+   bool showProgressUntilDone() {
       while (sum.load() < goal)
       {
          std::unique_lock<std::mutex> lk(m);
-         cv.wait(lk, [this]{ return update; });
+         cv.wait(lk, [this]{ return progress.load() != 0; });
 
-         displayOnce();
-         update = false;
+         auto copy = progress.load();
+         progress.store(0);
 
          lk.unlock();
+
+         showProgress(copy);
       }
-      displayOnce();
-      std::cout << std::endl;
       return sum.load() == goal;
    }
 
-   // Returns % done as type T
-   T displayOnce() const {
-      static T last = 0;
-      T ret = (sum.load() * static_cast<T>(100)) / goal;
+   inline T asPercent(T num) const {
+      long long tmp1 = 100, tmp2 = goal;
+      tmp1 *= num;
+      return tmp1/tmp2;
+   }
 
-      std::cout.seekp(-10, std::ios_base::end);
-      T prog = (ret - last)/10;
-      while (prog-- > 0)
-         std::cout << "=";
-      last = ret - (ret%10);
+   T showProgress(T num) {
+      auto tickSize = 10;
+      T prev = asPercent(sum.load());
+      prev -= (prev % tickSize);
+
+      sum += num;
+      T ret = asPercent(sum.load());
+
+      std::string output((ret - prev) / tickSize, '=');
+      std::cout << output << std::flush;
 
       return ret;
    }
 
-   void progress(T units) {
-      sum += units;
+   void makeProgress(T units){
       {
          std::lock_guard<std::mutex> lk(m);
-         update = true;
+         progress += units;
       }
       cv.notify_one();
    }
@@ -62,8 +64,8 @@ public:
 private:
    std::condition_variable cv;
    std::mutex m;
-   bool update;
 
+   std::atomic<T> progress;
    std::atomic<T> sum;
    const T goal;
 protected:

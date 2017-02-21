@@ -1,4 +1,6 @@
 #include "progress.hpp"
+#include <iostream>
+#include <fstream>
 #include <thread>
 #include <cstring>
 #include <cmath>
@@ -48,7 +50,6 @@ int getContentLength(char* header)
    {
       if ( strncmp(line, "Content-Length: ", strlen("Content-Length: ")) == 0 )
       {
-         std::cout << "Found content-length" << std::endl;
          // Extract content-length
          return atoi(line+strlen("Content-Length: "));
       }
@@ -78,9 +79,8 @@ bool downloadFile(const char* url, const char* destFile)
    host = connection.second;
 
    // Form request
-   char buf[1024];
+   char buf[4096];
    snprintf(buf, sizeof(buf), "GET /%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: HTMLGET 1.1\r\n\r\n", file==nullptr?"":file, host);
-   std::cout << buf << std::endl;
 
    // Send request
    unsigned int n=0;
@@ -103,26 +103,25 @@ bool downloadFile(const char* url, const char* destFile)
    unsigned int total=0;
    int index=0;
    memset(buf, 0, sizeof(buf));
-   std::cout << "Reading header" << std::endl;
 
-   while (sizeof(buf) > total &&
+   while (sizeof(buf)-1 > total &&
           strncmp(buf + index, suffix, strlen(suffix)) != 0)
    {
-      int rcvd = recv(sockfd, buf + total, sizeof(buf)-total, 0);
+      int rcvd = recv(sockfd, buf + total, sizeof(buf)-total-1, 0);
       if (rcvd < 0)
       {
          std::cout << "Failed to receive header" << std::endl;
          memset(buf, 0, sizeof(buf));
          break;
       }
+      total += rcvd;
 
       index = strlen(buf)-strlen(suffix);
       if (index < 0)
          index = 0;
    }
-   std::cout << "Getting length" << std::endl;
+
    int length = getContentLength(buf);
-   std::cout << length << std::endl;
    if (length < 0)
    {
       std::cout << "Failed to get Content-Length from header" << std::endl;
@@ -130,32 +129,30 @@ bool downloadFile(const char* url, const char* destFile)
    }
 
    // // file
-   FILE* destfp;
-   if (destFile == nullptr)
-      destfp = stdout;
-   else
-      destfp = fopen(destFile, "w");
-
-   ProgressBar<int> pb(length);
-   std::thread th(&ProgressBar<int>::displayUntilDone, &pb);
-   while (length > 0)
+   std::ofstream destfp (destFile);
+   if (destfp.is_open())
    {
-      memset(buf, 0, sizeof(buf));
-      int rcvd = recv(sockfd, buf, sizeof(buf)-1, 0);
-      if (rcvd < 0)
-         break;
-      pb.progress(rcvd);
 
-      fprintf(destfp, "%s", buf);
-      length -= rcvd;
+      ProgressBar<int> pb(length);
+      std::thread th(&ProgressBar<int>::showProgressUntilDone, &pb);
+      while (length > 0)
+      {
+         memset(buf, 0, sizeof(buf));
+         int rcvd = recv(sockfd, buf, sizeof(buf)-1, 0);
+         if (rcvd < 0)
+            break;
+         pb.makeProgress(rcvd);
+
+         destfp << buf << std::flush;
+         length -= rcvd;
+      }
+      th.join();
+
+      destfp.close();
    }
-   th.join();
-
-   // Close up shop
-   if (destfp != stdout)
+   else
    {
-      fclose(destfp);
-      destfp = nullptr;
+      std::cout << "Failed to open file " << destFile << std::endl;
    }
 
    shutdown(sockfd, SHUT_RDWR);
