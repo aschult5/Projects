@@ -1,6 +1,7 @@
 #include "progress.hpp"
-#include <unistd.h>
 #include <cstring>
+#include <cmath>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -9,7 +10,7 @@
 #include <arpa/inet.h>
 
 
-// Returns fd and filename
+// Returns socket fd and host
 std::pair<int, const char*> connectSocket(const char* host)
 {
    struct hostent *h;
@@ -38,44 +39,53 @@ std::pair<int, const char*> connectSocket(const char* host)
    return std::pair<int, const char*>(sockfd, h->h_name);
 }
 
+// Tokenize header by CRLF, looking for Content-Length:
+int getContentLength(char* header)
+{
+   const char* line = strtok(header, "\r\n");
+   while (line != nullptr)
+   {
+      if ( strncmp(line, "Content-Length: ", strlen("Content-Length: ")) == 0 )
+      {
+         std::cout << "Found content-length" << std::endl;
+         // Extract content-length
+         return atoi(line+strlen("Content-Length: "));
+      }
+      line = strtok(NULL, "\r\n\0");
+   }
+
+   return -1;
+}
+
 bool downloadFile(const char* url, const char* destFile)
 {
    // Extract host and file from URL
-   char urlcpy[255];
-   strncpy(urlcpy, url, 255);
+   char urlcpy[256];
+   if (strncmp(url, "http://", strlen("http://")) == 0)
+      strncpy(urlcpy, url+strlen("http://"), sizeof(urlcpy));
+   else if (strncmp(url, "https://", strlen("https://")) == 0)
+      strncpy(urlcpy, url+strlen("https://"), sizeof(urlcpy));
+   else
+      strncpy(urlcpy, url, sizeof(urlcpy));
+
    const char* host = strtok(urlcpy, "/");
    const char* file = strtok(NULL, "\0");
-   FILE* destfp;
 
    // Connect to host
    std::pair<int, const char*> connection = connectSocket(host);
    int sockfd = connection.first;
    host = connection.second;
 
-   // Print connection info
-   std::cout << sockfd << std::endl;
-   std::cout << (const char*)(host==NULL ? "":host) << std::endl;
-   std::cout << (const char*)(file==NULL ? "":file) << std::endl;
+   // Form request
+   char buf[1024];
+   snprintf(buf, sizeof(buf), "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: HTMLGET 1.0\r\n\r\n", file==nullptr?"":file, host);
+   std::cout << buf << std::endl;
 
-   // Open destFile for writing
-   if (destFile == nullptr)
-      destfp = stdout;
-   else
-      destfp = fopen(destFile, "w");
-
-   // Download file
-   char req[1024];
-   snprintf(req, sizeof(req), "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: HTMLGET 1.0\r\n\r\n", file==nullptr?"":file, host);
-   std::cout << req << std::endl;
-
-   char buffer[1024];
-   memset(buffer, 0, sizeof(buffer));
-
+   // Send request
    unsigned int n=0;
-   while(n < strlen(req))
+   while(n < strlen(buf))
    {
-      // Send HTTP GET
-      int sent = send(sockfd, &req[n], strlen(req) - n, 0);
+      int sent = send(sockfd, &buf[n], strlen(buf) - n, 0);
       if (sent < 0)
       {
          std::cout << "Failed to send" << std::endl;
@@ -84,14 +94,55 @@ bool downloadFile(const char* url, const char* destFile)
       }
       n += sent;
    }
-   int rcvd = n;
-   while (rcvd > 0)
+
+
+   // Receive
+   char header[1024];
+   memset(header, 0, sizeof(header));
+
+   // // header
+   const char* suffix="\r\n\r\n";
+   int index=0;
+   do {
+      memset(buf, 0, sizeof(buf));
+      int rcvd = recv(sockfd, buf, sizeof(buf), 0);
+      if (rcvd < 0)
+      {
+         std::cout << "Failed to receive header" << std::endl;
+         memset(header, 0, sizeof(header));
+         break;
+      }
+      strncat(header, buf, sizeof(header)-strlen(header)-1);
+
+      index = strlen(header)-strlen(suffix);
+      if (index < 0)
+         index = 0;
+   } while (strncmp(&header[index], "\r\n\r\n", strlen(suffix)) != 0);
+
+   int length = getContentLength(header);
+   std::cout << length << std::endl;
+   if (length < 0)
    {
-      // Receive
-      rcvd = recv(sockfd, buffer, sizeof(buffer), 0);
-      std::cout << "Received " << rcvd << std::endl;
-      fprintf(destfp, "%s", buffer);
-      memset(buffer, 0, sizeof(buffer));
+      std::cout << "Failed to get Content-Length from header" << std::endl;
+      std::cout << header << std::endl;
+   }
+
+   // // file
+   FILE* destfp;
+   if (destFile == nullptr)
+      destfp = stdout;
+   else
+      destfp = fopen(destFile, "w");
+
+   while (length > 0)
+   {
+      memset(buf, 0, sizeof(buf));
+      int rcvd = recv(sockfd, buf, sizeof(buf)-1, 0);
+      if (rcvd < 0)
+         break;
+      fprintf(destfp, "%s", buf);
+
+      length -= rcvd;
    }
 
    // Close up shop
