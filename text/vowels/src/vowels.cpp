@@ -3,15 +3,21 @@
 
 bool isVowel(char c)
 {
-   static std::vector<char> vowels { 'a', 'A', 'e', 'E', 'i', 'I', 'o', 'O', 'u', 'U' };
+   static std::vector<char> vowels { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' };
+   unsigned char l = 0, r = vowels.size()-1;
 
-   for (auto v : vowels)
+   while (l != r)
    {
-      if (v == c)
+      unsigned char i = (l+r)/2;
+      if (c == vowels[i])
          return true;
+      else if (c < vowels[i])
+         r = i;
+      else // c > vowels[i]
+         l = i+1;
    }
 
-   return false;
+   return c == vowels[l];
 }
 
 unsigned int countVowels(std::string text)
